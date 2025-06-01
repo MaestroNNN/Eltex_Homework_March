@@ -14,7 +14,10 @@
 
 **4. Запуск программы:**
 
-<pre> ```bash (gdb) b 30 Breakpoint 1 at 0x4011fa: file task5.2.c, line 31. (gdb) r < input.txt ``` </pre>
+<pre> ```bash 
+(gdb) b 30 
+Breakpoint 1 at 0x4011fa: file task5.2.c, line 31. 
+(gdb) r < input.txt ``` </pre>
 
 **Результат:**
 ![результат](images/result.jpg)
