@@ -18,6 +18,10 @@
 #define LEFT_START_LINE 1
 #define LEFT_START_COL 1
 
+WINDOW *up_subwin;
+WINDOW *left_win;
+WINDOW *right_win;
+
 volatile sig_atomic_t window_too_small = 0;
 
 void SigWinch(int signo);
@@ -25,6 +29,7 @@ void DrawSubwin(WINDOW *subwin);
 void DrawUpSubwin(WINDOW *subwin);
 void TitleSubwin(WINDOW *subwin);
 void DrawUpDir(WINDOW *subwin);
+void Update(WINDOW *up_subwin, WINDOW *left_win, WINDOW *right_win);
 
 int main(void) {
   // setlocale(LC_ALL, "");
@@ -41,37 +46,28 @@ int main(void) {
   init_pair(1, COLOR_WHITE, COLOR_BLUE);
   init_pair(2, COLOR_BLACK, COLOR_GREEN);
 
-  while (1) {
-    if (window_too_small == 0) {
-      WINDOW *up_subwin = subwin(stdscr, 1, COLS, 0, 0);
-      WINDOW *left_win = newwin(LINES - 1, COLS / 2, 1, 0);
-      WINDOW *right_win = newwin(LINES - 1, COLS / 2, 1, COLS / 2);
-      DrawSubwin(left_win);
-      DrawSubwin(right_win);
-      DrawUpSubwin(up_subwin);
-      // mvprintw(5, 5, "Current size of terminal is: %d lines x %d cols\n",
-      // LINES,
-      //          COLS);
-      // refresh();
-      sleep(1);
+  up_subwin = subwin(stdscr, 1, COLS, 0, 0);
+  left_win = newwin(LINES - 1, COLS / 2, 1, 0);
+  right_win = newwin(LINES - 1, COLS / 2, 1, COLS / 2);
 
-      delwin(up_subwin);
-      delwin(left_win);
-      delwin(right_win);
-      endwin();
-    } else {
-      clear();
-      mvprintw(0, 0, "The size of terminal is not enough");
-      sleep(1);
-      refresh();
-    }
-  }
+  Update(up_subwin, left_win, right_win);
 
+  // while (1) {
   getch();
+  // }
   // delwin(left_win);
   // delwin(right_win);
   endwin();
   return 0;
+}
+
+void Update(WINDOW *up_subwin, WINDOW *left_win, WINDOW *right_win) {
+  up_subwin = subwin(stdscr, 1, COLS, 0, 0);
+  left_win = newwin(LINES - 1, COLS / 2, 1, 0);
+  right_win = newwin(LINES - 1, COLS / 2, 1, COLS / 2);
+  DrawUpSubwin(up_subwin);
+  DrawSubwin(left_win);
+  DrawSubwin(right_win);
 }
 
 void SigWinch(int signo) {
@@ -80,9 +76,15 @@ void SigWinch(int signo) {
   ioctl(fileno(stdout), TIOCGWINSZ, (char *)&size);
   if (size.ws_col < 80) {
     window_too_small = 1;
+    clear();
+    mvprintw(0, 0, "The size of terminal is not enough");
+    // sleep(1);
+    refresh();
   } else {
+    clear();
     window_too_small = 0;
     resizeterm(size.ws_row, size.ws_col);
+    Update(up_subwin, left_win, right_win);
   }
   // clear();
   // refresh();
@@ -121,7 +123,7 @@ void DrawUpDir(WINDOW *subwin) {
 void DrawUpSubwin(WINDOW *subwin) {
   wattron(subwin, COLOR_PAIR(2));
   wbkgd(subwin, COLOR_PAIR(2));
-  wprintw(subwin, "  Left    File    Command    Options    Right");
+  mvwprintw(subwin, 0, 0, "  Left    File    Command    Options    Right");
   wrefresh(subwin);
 }
 
