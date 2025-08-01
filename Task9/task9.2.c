@@ -6,6 +6,7 @@
 #include <curses.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <locale.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,17 +18,22 @@
 #define LEFT_START_LINE 1
 #define LEFT_START_COL 1
 
+volatile sig_atomic_t window_too_small = 0;
+
 void SigWinch(int signo);
 void DrawSubwin(WINDOW *subwin);
 void DrawUpSubwin(WINDOW *subwin);
+void TitleSubwin(WINDOW *subwin);
+void DrawUpDir(WINDOW *subwin);
 
 int main(void) {
+  // setlocale(LC_ALL, "");
   initscr();
   signal(SIGWINCH, SigWinch);
   cbreak();  // откл. блокирующий режим ввода символов
   //  noecho(); // откл. отображение символов с клавиатуры
-  curs_set(1);  // упр видимостью курсора
-  // printw("Current size of terminal is: %d lines x %d cols\n", LINES, COLS);
+  curs_set(1);              // упр видимостью курсора
+  keypad(stdscr, TRUE);     // вкл. обработку клавиш
   scrollok(stdscr, FALSE);  // запрещает прокрутку
   start_color();
   refresh();
@@ -36,15 +42,29 @@ int main(void) {
   init_pair(2, COLOR_BLACK, COLOR_GREEN);
 
   while (1) {
-    WINDOW *up_subwin = subwin(stdscr, 1, COLS, 0, 0);
-    WINDOW *left_win = newwin(LINES - 1, COLS / 2, 1, 0);
-    WINDOW *right_win = newwin(LINES - 1, COLS / 2, 1, COLS / 2);
-    DrawSubwin(left_win);
-    DrawSubwin(right_win);
-    DrawUpSubwin(up_subwin);
-    delwin(up_subwin);
-    delwin(left_win);
-    delwin(right_win);
+    if (window_too_small == 0) {
+      WINDOW *up_subwin = subwin(stdscr, 1, COLS, 0, 0);
+      WINDOW *left_win = newwin(LINES - 1, COLS / 2, 1, 0);
+      WINDOW *right_win = newwin(LINES - 1, COLS / 2, 1, COLS / 2);
+      DrawSubwin(left_win);
+      DrawSubwin(right_win);
+      DrawUpSubwin(up_subwin);
+      // mvprintw(5, 5, "Current size of terminal is: %d lines x %d cols\n",
+      // LINES,
+      //          COLS);
+      // refresh();
+      sleep(1);
+
+      delwin(up_subwin);
+      delwin(left_win);
+      delwin(right_win);
+      endwin();
+    } else {
+      clear();
+      mvprintw(0, 0, "The size of terminal is not enough");
+      sleep(1);
+      refresh();
+    }
   }
 
   getch();
@@ -59,21 +79,56 @@ void SigWinch(int signo) {
   struct winsize size;
   ioctl(fileno(stdout), TIOCGWINSZ, (char *)&size);
   if (size.ws_col < 80) {
-    clear();
-    refresh();
-    printf("Увеличьте ширину окна\n");
+    window_too_small = 1;
   } else {
+    window_too_small = 0;
     resizeterm(size.ws_row, size.ws_col);
   }
   // clear();
   // refresh();
 }
 
+// Функция оторисовки окна
 void DrawSubwin(WINDOW *subwin) {
   wattron(subwin, COLOR_PAIR(1));
   wbkgd(subwin, COLOR_PAIR(1));
   box(subwin, '|', '-');
 
+  DrawUpDir(subwin);
+  TitleSubwin(subwin);
+
+  wrefresh(subwin);
+}
+
+// Функция отрисовки текущего каталога в окне
+void DrawUpDir(WINDOW *subwin) {
+  char up_dir[1024];
+  char *home = getenv("HOME");
+
+  if (getcwd(up_dir, sizeof(up_dir)) == NULL) {
+    perror("getcwd error");
+    exit(EXIT_FAILURE);
+  }
+
+  if (home && strncmp(up_dir, home, strlen(home)) == 0) {
+    mvwprintw(subwin, 0, 1, "~%s", up_dir + strlen(home));
+  } else {
+    mvwprintw(subwin, 0, 1, "%s", up_dir);
+  }
+}
+
+// Функция отрисовки верхнего подокна
+void DrawUpSubwin(WINDOW *subwin) {
+  wattron(subwin, COLOR_PAIR(2));
+  wbkgd(subwin, COLOR_PAIR(2));
+  wprintw(subwin, "  Left    File    Command    Options    Right");
+  wrefresh(subwin);
+}
+
+// void DrawFiles(subwin) {}
+
+// Функция отрисовки заголовка подокна, учитывая ширину окна
+void TitleSubwin(WINDOW *subwin) {
   int height, width;  // высота, ширина
   const char *up_title[] = {".n", "Name", "| Size |",
                             "Modify time"};  // верхний заголовок подокна
@@ -110,13 +165,4 @@ void DrawSubwin(WINDOW *subwin) {
       begin_Size +
       strlen(up_title[2]);  // 1 + .n + spaces + Name + spaces + Size
   mvwprintw(subwin, LEFT_START_LINE, begin_Modify, "%s", up_title[3]);
-
-  wrefresh(subwin);
-}
-
-void DrawUpSubwin(WINDOW *subwin) {
-  wattron(subwin, COLOR_PAIR(2));
-  wbkgd(subwin, COLOR_PAIR(2));
-  wprintw(subwin, "  Left    File    Command    Options    Right");
-  wrefresh(subwin);
 }
