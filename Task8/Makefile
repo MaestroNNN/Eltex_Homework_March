@@ -8,8 +8,11 @@ TARGET = a.out
 # Зависит от main.o и libcalc.a.
 # Сначала make соберёт все необходимые объектники, потом библиотеку, 
 # после этого слинкует main.c с библиотекой
-all: main.o libcalc.so calc.h
+task1: main.o libcalc.so calc.h
 	$(CC) main.c -o $(TARGET) -L. -lcalc -Wl,-rpath=.
+
+task2: libcalc.so calc.h
+	$(CC) main_dlfcn.c -o $(TARGET) -ldl -Wl,-rpath=.
 
 # Просто соберёт все объектники из исходников.
 objs: $(OBJ)

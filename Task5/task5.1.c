@@ -39,19 +39,20 @@ int Add(void) {
   char new_tel[10];
   printf("Enter name and second_name, and telephone: \n");
   if (fgets(abonent, sizeof(abonent), stdin) != NULL) {
-    // Если в строке нет символа новой строки — значит строка длиннее 29 символов
+    // Если в строке нет символа новой строки — значит строка длиннее 29
+    // символов
     if (strchr(abonent, '\n') == NULL) {
-        // Очистка остатка строки из stdin
-        int ch;
-        while ((ch = getchar()) != '\n' && ch != EOF);
+      // Очистка остатка строки из stdin
+      int ch;
+      while ((ch = getchar()) != '\n' && ch != EOF);
     }
-    int count = sscanf(abonent, "%9s %9s %9s", new_name, new_second_name, new_tel);
+    int count =
+        sscanf(abonent, "%9s %9s %9s", new_name, new_second_name, new_tel);
     if (count != 3) {
       printf("You wrote without spaces\n");
       return -1;
     }
-  }
-  else {
+  } else {
     printf("Error reading input\n");
     return 1;
   }
@@ -63,11 +64,10 @@ int Add(void) {
       strcpy(array[i].tel, new_tel);
       printf("The abonent is added\n");
       return 0;
-    }
-    else {
+    } else {
       i++;
     }
-    }
+  }
   if (i == 100) {
     printf("The array is full.\n");
     return 1;
@@ -89,14 +89,14 @@ int Delete(void) {
 
   int i = 0;
   while (i < 100) {
-    if ((strcmp(array[i].name, new_name) == 0) && (strcmp(array[i].second_name, new_second_name) == 0)) {
+    if ((strcmp(array[i].name, new_name) == 0) &&
+        (strcmp(array[i].second_name, new_second_name) == 0)) {
       memset(array[i].name, 0, sizeof(array[i].name));
       memset(array[i].second_name, 0, sizeof(array[i].second_name));
       memset(array[i].tel, 0, sizeof(array[i].tel));
       printf("The abonent is deleted\n");
       return 0;
-    }
-    else {
+    } else {
       i++;
     }
   }
@@ -112,13 +112,12 @@ int Find(void) {
 
   int i = 0;
   int count = 0;
-  while(i < 100) {
+  while (i < 100) {
     if (strcmp(array[i].name, find_name) == 0) {
       printf("The name %s is found on %d position\n", array[i].name, i);
       count++;
       i++;
-    }
-    else {
+    } else {
       i++;
     }
   }
@@ -131,19 +130,20 @@ int Find(void) {
 void PrintAll(void) {
   int i = 0;
   while (i < 100) {
-    printf("name[%d]=%s\t"
-          "second_name[%d]=%s\t"
-          "tel[%d]=%s\n",
-          i, array[i].name, i, array[i].second_name, i, array[i].tel);
+    printf(
+        "name[%d]=%s\t"
+        "second_name[%d]=%s\t"
+        "tel[%d]=%s\n",
+        i, array[i].name, i, array[i].second_name, i, array[i].tel);
     i++;
   }
 }
 
 int main(void) {
-  
   char menu = 0;
   while (menu != '5') {
-    printf("\t\tEnter number of list:\n"
+    printf(
+        "\t\tEnter number of list:\n"
         "\t\t1-Add abonent;\n"
         "\t\t2-Delete abonent;\n"
         "\t\t3-Find abonent;\n"
@@ -153,29 +153,29 @@ int main(void) {
     menu = getchar();
     while (getchar() != '\n');
     switch (menu) {
-      case '1': 
+      case '1':
         Add();
-        //printf("1\n");
+        // printf("1\n");
         break;
       case '2':
         Delete();
-        //printf("2\n");
+        // printf("2\n");
         break;
       case '3':
         Find();
-        //printf("3\n");
+        // printf("3\n");
         break;
       case '4':
         PrintAll();
-        //printf("4\n");
+        // printf("4\n");
         break;
       case '5':
         printf("Exit of programm...\n");
-        return 0; //what is return 0 or 1?
+        return 0;  // what is return 0 or 1?
         break;
       default:
         printf("Wrong switch, please repeat\n");
         break;
-    } 
+    }
   }
 }
