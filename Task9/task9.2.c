@@ -26,7 +26,7 @@ void DrawUpSubwin(WINDOW *subwin);
 void TitleSubwin(WINDOW *subwin);
 void DrawUpDir(WINDOW *subwin);
 void Update();
-void ReadDir(WINDOW *subwin);
+int ReadDir(WINDOW *subwin);
 
 int main(void) {
   // printf("PID: %d\n", getpid());
@@ -40,6 +40,18 @@ int main(void) {
   start_color();
   refresh();
 
+  struct winsize size;
+  ioctl(fileno(stdout), TIOCGWINSZ, (char *)&size);
+  if (size.ws_col < 80 || size.ws_row < 12) {
+    window_too_small = 1;
+    werase(stdscr);
+    mvprintw(0, 0, "The terminal size is too small (< 80x12). Please resize.");
+    refresh();
+    sleep(5);
+    endwin();
+    return 1;
+  }
+
   init_pair(1, COLOR_WHITE, COLOR_BLUE);
   init_pair(2, COLOR_BLACK, COLOR_GREEN);
 
@@ -48,10 +60,16 @@ int main(void) {
   right_win = newwin(LINES - 1, COLS / 2, 1, COLS / 2);
   Update();  // начальная отрисовка
 
-  ReadDir(left_win);
+  int count_lines = ReadDir(left_win);
   ReadDir(right_win);
   int ch;
-  int active_panel = 0;
+  int active_panel = 1;
+  int move_line = 3;
+  int h, w;  // h = высота, w = ширина
+
+  getmaxyx(right_win, h, w);
+  mvwchgat(right_win, move_line, 2, w - 5, A_NORMAL, 0, NULL);
+  wrefresh(right_win);
 
   while (1) {
     if (window_too_small) {
@@ -67,15 +85,54 @@ int main(void) {
       case '\t':
         active_panel = 1 - active_panel;
         if (active_panel == 0) {
-          wmove(left_win, 2, 1);
-          wrefresh(left_win);
+          mvwchgat(right_win, move_line, 2, w - 5, A_NORMAL, 1,
+                   NULL);  // восстановить подсветку
           wrefresh(right_win);
+          mvwchgat(left_win, move_line, 2, w - 5, A_NORMAL, 0,
+                   NULL);  // применить новую подсветку
+          //  wmove(left_win, move_line, 3);
+          wrefresh(left_win);
+          continue;
         } else {
-          wmove(right_win, 2, 1);
+          mvwchgat(left_win, move_line, 2, w - 5, A_NORMAL, 1, NULL);
           wrefresh(left_win);
+          mvwchgat(right_win, move_line, 2, w - 5, A_NORMAL, 0, NULL);
+          //  wmove(right_win, move_line, 3);
           wrefresh(right_win);
+          continue;
         }
         break;
+      case KEY_UP:
+        if (active_panel == 0 && move_line > 2) {
+          wmove(left_win, --move_line, 3);
+          mvwchgat(left_win, move_line + 1, 2, w - 5, A_NORMAL, 1, NULL);
+          mvwchgat(left_win, move_line, 2, w - 5, A_NORMAL, 0, NULL);
+          wrefresh(left_win);
+          continue;
+        } else if (active_panel == 1 && move_line > 2) {
+          wmove(right_win, --move_line, 3);
+          mvwchgat(right_win, move_line + 1, 2, w - 5, A_NORMAL, 1, NULL);
+          mvwchgat(right_win, move_line, 2, w - 5, A_NORMAL, 0, NULL);
+          wrefresh(right_win);
+          continue;
+        }
+        continue;
+        ;
+      case KEY_DOWN:
+        if (active_panel == 0 && move_line < count_lines) {
+          wmove(left_win, ++move_line, 3);
+          mvwchgat(left_win, move_line - 1, 2, w - 5, A_NORMAL, 1, NULL);
+          mvwchgat(left_win, move_line, 2, w - 5, A_NORMAL, 0, NULL);
+          wrefresh(left_win);
+          continue;
+        } else if (active_panel == 1 && move_line < count_lines) {
+          wmove(right_win, ++move_line, 3);
+          mvwchgat(right_win, move_line - 1, 2, w - 5, A_NORMAL, 1, NULL);
+          mvwchgat(right_win, move_line, 2, w - 5, A_NORMAL, 0, NULL);
+          wrefresh(right_win);
+          continue;
+        }
+        continue;
       default:
         continue;
     }
@@ -107,10 +164,10 @@ void SigWinch(int signo) {
   struct winsize size;
   ioctl(fileno(stdout), TIOCGWINSZ, (char *)&size);
 
-  if (size.ws_col < 80 || size.ws_row < 5) {
+  if (size.ws_col < 80 || size.ws_row < 12) {
     window_too_small = 1;
     werase(stdscr);
-    mvprintw(0, 0, "The terminal size is too small (< 80x5). Please resize.");
+    mvprintw(0, 0, "The terminal size is too small (< 80x12). Please resize.");
     refresh();
     return;
   }
@@ -212,7 +269,7 @@ void TitleSubwin(WINDOW *subwin) {
 //   }
 // }
 
-void ReadDir(WINDOW *subwin) {
+int ReadDir(WINDOW *subwin) {
   DIR *dir = opendir(".");
   if (dir == NULL) {
     perror("opendir error");
@@ -229,10 +286,12 @@ void ReadDir(WINDOW *subwin) {
 
   for (int i = 0; i < n; ++i) {
     mvwprintw(subwin, i + 1, 3, "%s", namelist[i]->d_name);
-    free(namelist[n]);
+    free(namelist[i]);
   }
   free(namelist);
 
   closedir(dir);
   wrefresh(subwin);
+
+  return n;
 }
