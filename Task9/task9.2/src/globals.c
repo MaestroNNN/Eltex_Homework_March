@@ -1,5 +1,8 @@
 #include "globals.h"
 
+#include <signal.h>
+#include <sys/ioctl.h>
+
 WINDOW *up_subwin;
 WINDOW *left_win;
 WINDOW *right_win;

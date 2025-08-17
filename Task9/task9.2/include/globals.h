@@ -2,6 +2,8 @@
 #define GLOBALS_H
 
 #include <curses.h>
+#include <signal.h>
+#include <sys/ioctl.h>
 
 #define LEFT_START_LINE 1
 #define LEFT_START_COL 1
