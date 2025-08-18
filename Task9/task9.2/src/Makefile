@@ -1,20 +1,15 @@
 CC = gcc
 CFLAGS = -lncurses
-
-# Список исходников
 SRCS = main.c signal.c read_dir.c globals.c move_cursor.c draw.c
-# Соответствующие объектные файлы
-OBJS = $(SRCS:.c=.o)
+OBJS = $(SRCS:%.c=../build/%.o)
 
 all: $(OBJS)
-	$(CC) $(OBJS) -lncurses
+	$(CC) $(OBJS) -lncurses -o ../build/program.out
 
-# Цель для создания только объектных файлов
 objs: $(OBJS)
 
-# Правило для компиляции каждого .c в .o
-%.o: %.c
+../build/%.o: %.c
 	$(CC) -c $< -o $@ -I../include/
 
 clean:
-	rm *.o a.out
+	rm -f ../build/*.o ../build/*.out

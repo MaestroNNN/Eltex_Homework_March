@@ -7,7 +7,7 @@
 #include "globals.h"
 #include "move_cursor.h"
 #include "read_dir.h"
-#include "signal.h"
+#include "signall.h"
 
 #define LEFT_START_LINE 1
 #define LEFT_START_COL 1

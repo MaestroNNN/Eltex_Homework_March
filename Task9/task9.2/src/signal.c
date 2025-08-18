@@ -1,11 +1,10 @@
-#include "signal.h"
-
 #include <sys/ioctl.h>
 #include <unistd.h>
 
 #include "draw.h"
 #include "globals.h"
 #include "read_dir.h"
+#include "signall.h"
 
 void SigWinch(int signo) {
   struct winsize size;
